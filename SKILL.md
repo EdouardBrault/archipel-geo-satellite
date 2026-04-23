@@ -1,6 +1,6 @@
 ---
 name: archipel-geo-satellite
-description: Scaffold and deploy an Archipel Marketing "citation magnet" satellite site for a new client. Runs the entire onboarding (Astro site, daily agents, GitHub Actions crons, Cloudflare Pages deploy, Wikidata entity, Peec AI wiring) from a single client.yaml. Invoke when an Archipel collaborator starts a new GEO client project.
+description: End-to-end onboarding for an Archipel GEO client: scaffolds the Astro satellite site, agents, cron workflows and deploys to Cloudflare Pages from a single client.yaml. Invoke on new client projects.
 ---
 
 # Archipel GEO Satellite — skill de provisioning client
