@@ -1,0 +1,110 @@
+---
+/**
+ * Dynamic route — renders every article in the content collection.
+ *
+ * Dispatches to the right layout based on frontmatter.kind:
+ *   listicle → ListicleLayout
+ *   guide    → GuideLayout
+ *   tool     → ToolLayout
+ *   profile  → ProfileLayout
+ */
+import { getCollection, render } from "astro:content";
+import ListicleLayout from "../layouts/ListicleLayout.astro";
+import GuideLayout from "../layouts/GuideLayout.astro";
+import ToolLayout from "../layouts/ToolLayout.astro";
+import ProfileLayout from "../layouts/ProfileLayout.astro";
+
+export async function getStaticPaths() {
+  const articles = await getCollection(
+    "articles",
+    ({ data }) => data.status === "published"
+  );
+  return articles.map((article) => ({
+    params: { slug: article.data.slug },
+    props: { article },
+  }));
+}
+
+const { article } = Astro.props;
+const { Content } = await render(article);
+const data = article.data;
+---
+
+{
+  data.kind === "listicle" && (
+    <ListicleLayout
+      title={data.title}
+      description={data.description}
+      datePublished={data.datePublished}
+      dateModified={data.dateModified}
+      lead={data.lead}
+      tldr={data.tldr}
+      items={data.items ?? []}
+      comparisonHeaders={data.comparisonHeaders}
+      comparisonRows={data.comparisonRows}
+      courses={data.courses}
+      faqs={data.faqs}
+    >
+      <Content />
+    </ListicleLayout>
+  )
+}
+
+{
+  data.kind === "guide" && (
+    <GuideLayout
+      title={data.title}
+      description={data.description}
+      datePublished={data.datePublished}
+      dateModified={data.dateModified}
+      lead={data.lead}
+      tldr={data.tldr}
+      comparisonHeaders={data.comparisonHeaders}
+      comparisonRows={data.comparisonRows}
+      faqs={data.faqs}
+    >
+      <Content />
+    </GuideLayout>
+  )
+}
+
+{
+  data.kind === "tool" && (
+    <ToolLayout
+      title={data.title}
+      description={data.description}
+      datePublished={data.datePublished}
+      dateModified={data.dateModified}
+      lead={data.lead}
+      tldr={data.tldr}
+      toolName={data.tool_name}
+      toolUrl={data.tool_url}
+      items={data.items}
+      comparisonHeaders={data.comparisonHeaders}
+      comparisonRows={data.comparisonRows}
+      faqs={data.faqs}
+    >
+      <Content />
+    </ToolLayout>
+  )
+}
+
+{
+  data.kind === "profile" && (
+    <ProfileLayout
+      title={data.title}
+      description={data.description}
+      datePublished={data.datePublished}
+      dateModified={data.dateModified}
+      lead={data.lead}
+      tldr={data.tldr}
+      providerName={data.provider_name}
+      providerUrl={data.provider_url}
+      providerCertifications={data.provider_certifications}
+      items={data.items}
+      faqs={data.faqs}
+    >
+      <Content />
+    </ProfileLayout>
+  )
+}

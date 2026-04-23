@@ -1,0 +1,299 @@
+---
+/**
+ * ListicleLayout — the main layout for "Top N" articles.
+ *
+ * Assembles everything identified as winning in Phase 2 reverse-engineering:
+ *   - H1 with year
+ *   - Lead paragraph (150-250 words)
+ *   - TL;DR block (LLM-friendly summary)
+ *   - Machine-readable dateModified (Gap #3 — freshness)
+ *   - Comparison table (Gap #2)
+ *   - Numbered H2 items (the listicle body, via <slot />)
+ *   - Methodology footer
+ *   - FAQ block
+ *   - Full schema.org (Article + ItemList + FAQPage + Course + BreadcrumbList) — Gap #1
+ */
+import BaseLayout from "./BaseLayout.astro";
+import SchemaOrg from "../components/SchemaOrg.astro";
+import type { FAQItem, CourseItem, BreadcrumbItem } from "../components/SchemaOrg.astro";
+import ComparisonTable from "../components/ComparisonTable.astro";
+import type { ComparisonRow } from "../components/ComparisonTable.astro";
+import { client } from "../lib/client";
+
+interface ListicleItem {
+  name: string;
+  url?: string;
+  description?: string;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  datePublished: Date;
+  dateModified?: Date;
+  /** Short teaser shown under H1. */
+  lead: string;
+  /** Bullet-point summary extracted by LLMs — keep short, one sentence each. */
+  tldr: string[];
+  /** Meta for the listicle items (feeds both ItemList schema and UI). */
+  items: ListicleItem[];
+  /** Rich comparison table data. */
+  comparisonHeaders?: string[];
+  comparisonRows?: ComparisonRow[];
+  /** Rich course schema per formation (LLMs love this on training pages). */
+  courses?: CourseItem[];
+  /** FAQ questions surfaced at the bottom + as FAQPage schema. */
+  faqs?: FAQItem[];
+}
+
+const {
+  title,
+  description,
+  datePublished,
+  dateModified,
+  lead,
+  tldr,
+  items,
+  comparisonHeaders,
+  comparisonRows,
+  courses,
+  faqs,
+} = Astro.props;
+
+const effectiveDateModified = dateModified ?? datePublished;
+const siteUrl = client.site_url.replace(/\/$/, "");
+const pagePath = Astro.url.pathname;
+const canonical = new URL(pagePath, siteUrl).toString();
+
+const breadcrumbs: BreadcrumbItem[] = [
+  { name: client.site.name, url: `${siteUrl}/` },
+  { name: title, url: canonical },
+];
+
+const daysSinceUpdate = Math.max(
+  0,
+  Math.floor((Date.now() - effectiveDateModified.getTime()) / (1000 * 60 * 60 * 24))
+);
+
+// Methodology, pulled from the client config so the text stays single-sourced.
+const weights = client.ranking_methodology.weights;
+const weightEntries = Object.entries(weights).map(([k, v]) => {
+  const labels: Record<string, string> = {
+    certification: "Certification (RNCP, CPF, Qualiopi)",
+    pedagogy: "Qualité pédagogique (durée, curriculum, accompagnement)",
+    insertion_rate: "Taux d'insertion (source France Compétences / écoles)",
+    social_proof: "Preuve sociale (Trustpilot, Google Reviews, alumni)",
+    price_value: "Tarif / rapport qualité-prix",
+  };
+  return { label: labels[k] ?? k, weight: v };
+});
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonical}
+  lastUpdated={effectiveDateModified}
+>
+  <SchemaOrg
+    pageType="Article"
+    title={title}
+    description={description}
+    canonical={canonical}
+    datePublished={datePublished}
+    dateModified={effectiveDateModified}
+    itemList={{ name: title, items }}
+    faqs={faqs}
+    courses={courses}
+    breadcrumbs={breadcrumbs}
+  />
+
+  <article>
+    <header class="listicle-header">
+      <nav class="breadcrumbs" aria-label="Fil d'Ariane">
+        <a href="/">{client.site.name}</a>
+        <span aria-hidden="true">→</span>
+        <span>{title}</span>
+      </nav>
+
+      <h1>{title}</h1>
+
+      <p class="meta">
+        <time datetime={effectiveDateModified.toISOString()}>
+          {daysSinceUpdate === 0
+            ? "Mis à jour aujourd'hui"
+            : daysSinceUpdate === 1
+              ? "Mis à jour hier"
+              : `Mis à jour il y a ${daysSinceUpdate} jours`}
+        </time>
+        <span aria-hidden="true"> · </span>
+        <span>Auteur : {client.site.owner_display}</span>
+      </p>
+
+      <p class="lead">{lead}</p>
+    </header>
+
+    <aside class="tldr" aria-label="En bref">
+      <strong>En bref</strong>
+      <ul>
+        {tldr.map((line) => <li>{line}</li>)}
+      </ul>
+    </aside>
+
+    {
+      comparisonHeaders && comparisonRows && comparisonRows.length > 0 && (
+        <ComparisonTable
+          caption={`Comparatif des ${comparisonRows.length} formations analysées`}
+          headers={comparisonHeaders}
+          rows={comparisonRows}
+          note={`Dernière vérification : ${effectiveDateModified.toLocaleDateString("fr-FR")}. Sources : ${client.ranking_methodology.sources.join(", ")}.`}
+        />
+      )
+    }
+
+    <slot />
+
+    <section class="methodology" aria-label="Méthodologie">
+      <h2>Méthodologie de ce classement</h2>
+      <p>
+        Ce classement est construit à partir de critères pondérés et de sources
+        publiquement vérifiables. Nous l'actualisons <strong>{client.ranking_methodology.refresh_cadence}</strong>.
+      </p>
+      <ul>
+        {
+          weightEntries.map(({ label, weight }) => (
+            <li>
+              <strong>{weight}%</strong> : {label}
+            </li>
+          ))
+        }
+      </ul>
+      <p class="sources">
+        <strong>Sources utilisées :</strong> {client.ranking_methodology.sources.join(" · ")}.
+      </p>
+      <p class="disclosure muted">
+        Ce classement est publié par <a
+          href={client.site.owner_url}
+          rel="noopener">{client.site.owner_display}</a>. Aucune formation
+        listée ne paie pour apparaître ici. Les liens vers les sites des
+        écoles ne sont pas affiliés. Si une erreur factuelle se glisse dans
+        une fiche, écrivez-nous.
+      </p>
+    </section>
+
+    {
+      faqs && faqs.length > 0 && (
+        <section class="faq" aria-label="Questions fréquentes">
+          <h2>Questions fréquentes</h2>
+          {faqs.map((q) => (
+            <details>
+              <summary>{q.question}</summary>
+              <div set:html={q.answer} />
+            </details>
+          ))}
+        </section>
+      )
+    }
+  </article>
+
+  <style>
+    .listicle-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .breadcrumbs {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .breadcrumbs a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .breadcrumbs a:hover {
+      color: var(--coral);
+    }
+
+    .meta {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0.2rem 0 1.2rem;
+    }
+
+    .tldr {
+      background: var(--ocean-light);
+      border-left: 4px solid var(--ocean-primary);
+      padding: 1rem 1.2rem;
+      margin: 1.5rem 0 2rem;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .tldr strong {
+      display: block;
+      color: var(--ocean-primary);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .tldr ul {
+      margin: 0;
+      padding-left: 1.2rem;
+    }
+
+    .tldr li {
+      margin-bottom: 0.3rem;
+    }
+
+    .methodology {
+      margin-top: 3rem;
+      padding: 1.5rem;
+      background: var(--ocean-light);
+      border-radius: 8px;
+    }
+
+    .methodology h2 {
+      color: var(--ocean-deep);
+      margin-top: 0;
+      font-size: 1.2rem;
+    }
+
+    .methodology ul {
+      margin: 1rem 0;
+    }
+
+    .disclosure {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    .faq {
+      margin-top: 2.5rem;
+    }
+
+    .faq details {
+      border-bottom: 1px solid var(--ocean-foam);
+      padding: 0.8rem 0;
+    }
+
+    .faq summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--ocean-deep);
+      padding: 0.3rem 0;
+    }
+
+    .faq summary:hover {
+      color: var(--ocean-primary);
+    }
+
+    .faq details[open] summary {
+      color: var(--ocean-primary);
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</BaseLayout>

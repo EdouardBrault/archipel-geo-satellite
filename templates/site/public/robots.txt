@@ -1,0 +1,86 @@
+# {{FQDN}}, bot policy
+# Last reviewed: April 2026
+#
+# This site is built TO BE cited by LLMs. We explicitly welcome retrieval
+# and search bots (Bing, Google, Perplexity, ChatGPT, Claude, Gemini),
+# and we allow training crawlers too (citation-magnet strategy, not
+# content-protection strategy).
+
+User-agent: *
+Allow: /
+
+# --- Search engine retrieval (primary citation sources) -----------------
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# --- LLM retrieval bots (live fetch at query time) ----------------------
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: DoubaoBot
+Allow: /
+
+User-agent: MistralAI-User
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: cohere-training-data-crawler
+Allow: /
+
+# --- LLM training crawlers (opt-in on purpose) --------------------------
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# --- Sitemap ------------------------------------------------------------
+
+Sitemap: https://{{FQDN}}/sitemap-index.xml

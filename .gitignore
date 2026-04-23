@@ -1,0 +1,29 @@
+# Skill-level gitignore
+#
+# Nothing runtime-generated should land in the skill repo. Anything with
+# client data (real filled client.yaml, real INDEXNOW keys, real secrets,
+# Wikidata QIDs in motion) lives only on the collaborator's machine or
+# in the generated project repo.
+
+# Local onboarding env files
+.env.onboarding
+.env
+.env.*
+!.env.example
+
+# Actual client configs — only the example is tracked
+client.yaml
+clients/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,97 @@
+name: Weekly flagship refresh
+
+# Every Monday 07:00 UTC, refresh the top-cited owned articles.
+# The script rewrites the `lead` + `tldr` of each flagship (small surface,
+# low regression risk), bumps `dateModified`, commits all refreshes as one
+# commit, builds and deploys inline (same reason as write-and-publish.yml:
+# GITHUB_TOKEN pushes don't trigger other workflows).
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * 1"  # Monday 07:00 UTC
+
+concurrency:
+  group: agents-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  deployments: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kill-switch check
+        run: |
+          if [ "${{ vars.AGENTS_ENABLED }}" != "true" ]; then
+            echo "::notice ::AGENTS_ENABLED is not 'true', exiting."
+            exit 78
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: 04-agents/requirements.txt
+
+      - name: Install deps
+        working-directory: 04-agents
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Refresh flagships
+        working-directory: 04-agents
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          AGENTS_ENABLED: ${{ vars.AGENTS_ENABLED }}
+          GIT_AUTHOR_NAME: "Archipel Agent"
+          GIT_AUTHOR_EMAIL: "agents@archipelmarketing.com"
+          GIT_COMMITTER_NAME: "Archipel Agent"
+          GIT_COMMITTER_EMAIL: "agents@archipelmarketing.com"
+        run: python refresh_flagship.py
+
+      # Same inline build + deploy chain as write-and-publish.yml
+      - name: Set up Node for build
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: 03-site/package-lock.json
+
+      - name: Install site deps
+        working-directory: 03-site
+        run: npm ci
+
+      - name: Build Astro site
+        working-directory: 03-site
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy 03-site/dist --project-name={{GH_REPO}} --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify search indexers (IndexNow + Bing + Wayback)
+        working-directory: 03-site
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+          SITE_URL: https://{{FQDN}}
+          BING_API_KEY: ${{ secrets.BING_API_KEY }}
+          WAYBACK_ENABLED: ${{ vars.WAYBACK_ENABLED }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true
+        run: node scripts/notify-indexers.mjs

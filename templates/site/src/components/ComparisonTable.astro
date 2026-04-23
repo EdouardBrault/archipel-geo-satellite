@@ -1,0 +1,154 @@
+---
+/**
+ * ComparisonTable — sem,antic <table> for listicle comparisons.
+ *
+ * Fills Gap #2 from Phase 2: only 1 of the 13 top-cited URLs uses a proper
+ * <table>. We emit <table> with <caption>, <th scope>, <tbody> — format that
+ * LLMs extract cleanly, often quoting specific cells.
+ *
+ * Mobile: the same <table> is styled responsively (horizontal scroll if
+ * needed). We don't switch to a <div> grid — that would lose the semantics.
+ */
+export interface ComparisonRow {
+  rank: number;
+  name: string;
+  url?: string;
+  is_promoted?: boolean; // highlight the client's brand
+  /** Arbitrary cells, column order matches `headers` below. */
+  cells: (string | number | null)[];
+}
+
+interface Props {
+  caption: string;
+  /** Column headers in display order — first one is always the "name" col. */
+  headers: string[];
+  rows: ComparisonRow[];
+  note?: string; // e.g. "Dernière vérification : 22 avril 2026"
+}
+
+const { caption, headers, rows, note } = Astro.props;
+---
+
+<figure class="comparison-table-wrap">
+  <table class="comparison-table">
+    <caption>{caption}</caption>
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Formation</th>
+        {headers.map((h) => <th scope="col">{h}</th>)}
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((row) => (
+          <tr class:list={[{ "is-promoted": row.is_promoted }]}>
+            <th scope="row">{row.rank}</th>
+            <td>
+              {row.url ? (
+                <a href={row.url} rel="noopener">
+                  {row.name}
+                </a>
+              ) : (
+                row.name
+              )}
+              {row.is_promoted && <span class="badge">Uncode</span>}
+            </td>
+            {row.cells.map((c) => (
+              <td>{c ?? <span class="muted">n/c</span>}</td>
+            ))}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+  {note && <figcaption>{note}</figcaption>}
+</figure>
+
+<style>
+  .comparison-table-wrap {
+    margin: 2rem 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    min-width: 560px;
+  }
+
+  .comparison-table caption {
+    caption-side: top;
+    text-align: left;
+    font-weight: 600;
+    color: var(--ocean-primary);
+    padding-bottom: 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .comparison-table thead th {
+    background: var(--ocean-primary);
+    color: white;
+    text-align: left;
+    padding: 0.6rem 0.8rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .comparison-table tbody th {
+    text-align: right;
+    padding: 0.6rem 0.8rem;
+    color: var(--muted);
+    font-weight: 500;
+    background: var(--ocean-light);
+  }
+
+  .comparison-table tbody td {
+    padding: 0.7rem 0.8rem;
+    border-bottom: 1px solid var(--ocean-foam);
+    vertical-align: top;
+  }
+
+  .comparison-table tbody tr:nth-child(even) td {
+    background: var(--ocean-light);
+  }
+
+  .comparison-table tbody tr.is-promoted th,
+  .comparison-table tbody tr.is-promoted td {
+    background: color-mix(in srgb, var(--coral) 12%, white);
+    font-weight: 500;
+  }
+
+  .comparison-table tbody tr.is-promoted th {
+    color: var(--coral);
+    font-weight: 700;
+  }
+
+  .badge {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0.15rem 0.5rem;
+    background: var(--coral);
+    color: white;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    border-radius: 3px;
+    text-transform: uppercase;
+    vertical-align: middle;
+  }
+
+  figcaption {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+    font-style: italic;
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+</style>

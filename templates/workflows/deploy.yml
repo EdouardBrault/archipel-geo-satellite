@@ -1,0 +1,82 @@
+name: Deploy site → Cloudflare Pages
+
+# Auto-deploys the Astro site on every push to main.
+# Also triggers on changes to the site subfolder or the workflow itself.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "03-site/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: 03-site/package-lock.json
+
+      - name: Install dependencies
+        working-directory: 03-site
+        run: npm ci
+
+      - name: Build Astro site
+        working-directory: 03-site
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy 03-site/dist --project-name={{GH_REPO}} --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      # Push the newly built URLs to IndexNow (Bing/Yandex/DuckDuckGo/...),
+      # Bing Webmaster API (if key set), and Wayback Machine (optional).
+      # Runs after the Cloudflare deploy so the URLs are reachable at
+      # crawl time. Failures here do NOT fail the workflow.
+      - name: Notify search indexers
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        working-directory: 03-site
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+          SITE_URL: https://{{FQDN}}
+          BING_API_KEY: ${{ secrets.BING_API_KEY }}
+          WAYBACK_ENABLED: ${{ vars.WAYBACK_ENABLED }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true
+        run: node scripts/notify-indexers.mjs
+
+      - name: Notify Slack
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK" ]; then
+            echo "No SLACK_WEBHOOK_URL configured, skipping notification."
+            exit 0
+          fi
+          if [ "${{ job.status }}" = "success" ]; then
+            TEXT=":white_check_mark: *Deploy réussi* — {{FQDN}} · commit \`${GITHUB_SHA:0:7}\` · <${{ github.event.head_commit.url }}|voir commit>"
+          else
+            TEXT=":rotating_light: *Deploy échoué* — ${{ job.status }} · commit \`${GITHUB_SHA:0:7}\` · <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|logs>"
+          fi
+          curl -sS -X POST -H 'Content-type: application/json' --data "{\"text\":\"$TEXT\"}" "$SLACK_WEBHOOK"

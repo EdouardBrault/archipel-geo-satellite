@@ -1,0 +1,144 @@
+name: Write + fact-check + publish article
+
+# Manually triggered for v1. Once we're confident, we add:
+#   schedule:
+#     - cron: "0 7 * * 2,4"   # Tuesday + Thursday 07:00 UTC
+#
+# Workflow steps:
+#   1. Check the AGENTS_ENABLED kill switch
+#   2. draft_article.py reads a brief from 04-agents/briefs/
+#   3. fact_check.py validates links + sourced claims
+#   4. publish.py commits + pushes — existing deploy.yml picks it up
+
+on:
+  workflow_dispatch:
+    inputs:
+      brief:
+        description: "Path to the brief YAML, relative to repo root. Leave empty to let the planner pick from planner_priorities.yaml."
+        required: false
+        default: ""
+  schedule:
+    # Tuesday + Thursday 07:00 UTC — cadence "2 articles/semaine"
+    # (defined in the client.yaml, section `cadence.new_articles_per_week`)
+    - cron: "0 7 * * 2,4"
+
+concurrency:
+  group: agents-write
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  write-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kill-switch check
+        run: |
+          if [ "${{ vars.AGENTS_ENABLED }}" != "true" ]; then
+            echo "::notice ::AGENTS_ENABLED is not 'true', exiting."
+            exit 78   # 78 = neutral: skip the rest of the workflow
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: 04-agents/requirements.txt
+
+      - name: Install deps
+        working-directory: 04-agents
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # If no brief is provided (empty string via UI, or cron trigger), ask
+      # the planner to pick one from planner_priorities.yaml using the latest
+      # Peec snapshot to re-rank.
+      - name: Plan next article (if no brief provided)
+        id: plan
+        if: github.event.inputs.brief == '' || github.event_name == 'schedule'
+        working-directory: 04-agents
+        env:
+          AGENTS_ENABLED: ${{ vars.AGENTS_ENABLED }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python planner.py
+
+      - name: Draft article
+        id: draft
+        working-directory: 04-agents
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          AGENTS_ENABLED: ${{ vars.AGENTS_ENABLED }}
+          # Explicit input wins; otherwise take whatever the planner produced.
+          BRIEF_PATH: ${{ github.event.inputs.brief != '' && github.event.inputs.brief || steps.plan.outputs.brief_path }}
+        run: |
+          python draft_article.py
+          # Propagate the slug written to the content dir to later steps
+          SLUG=$(ls -t ../03-site/src/content/articles/*.md | head -n1 | xargs basename | sed 's/\.md$//')
+          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
+
+      - name: Fact-check
+        working-directory: 04-agents
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          AGENTS_ENABLED: ${{ vars.AGENTS_ENABLED }}
+          ARTICLE_SLUG: ${{ steps.draft.outputs.slug }}
+        run: python fact_check.py
+
+      - name: Publish (commit + push)
+        working-directory: 04-agents
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          AGENTS_ENABLED: ${{ vars.AGENTS_ENABLED }}
+          ARTICLE_SLUG: ${{ steps.draft.outputs.slug }}
+          GIT_AUTHOR_NAME: "Archipel Agent"
+          GIT_AUTHOR_EMAIL: "agents@archipelmarketing.com"
+          GIT_COMMITTER_NAME: "Archipel Agent"
+          GIT_COMMITTER_EMAIL: "agents@archipelmarketing.com"
+        run: python publish.py
+
+      # The push above uses GITHUB_TOKEN which, by GitHub's loop-prevention
+      # rule, does NOT trigger deploy.yml. We therefore build + deploy +
+      # notify search indexers inline here (mirroring deploy.yml).
+      - name: Set up Node for build
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: 03-site/package-lock.json
+
+      - name: Install site deps
+        working-directory: 03-site
+        run: npm ci
+
+      - name: Build Astro site
+        working-directory: 03-site
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy 03-site/dist --project-name={{GH_REPO}} --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify search indexers (IndexNow + Bing + Wayback)
+        working-directory: 03-site
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+          SITE_URL: https://{{FQDN}}
+          BING_API_KEY: ${{ secrets.BING_API_KEY }}
+          WAYBACK_ENABLED: ${{ vars.WAYBACK_ENABLED }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true
+        run: node scripts/notify-indexers.mjs

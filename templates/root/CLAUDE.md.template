@@ -1,0 +1,100 @@
+# CLAUDE.md — {{CLIENT_DISPLAY_NAME}} · {{PROMOTED_BRAND_NAME}} · Archipel Marketing
+
+This project is run on **gstack** (Garry Tan's Claude Code skill pack, MIT — https://github.com/garrytan/gstack). gstack is **the methodological base**, not an optional accessory. Every phase, review, and ship event goes through its commands and ethos.
+
+See also: [README.md](README.md) for mission, phases, domain strategy, and ground rules.
+
+---
+
+## 0 · gstack install (do this first if missing)
+
+Check for `~/.claude/skills/gstack`. If absent, from any terminal:
+
+```bash
+git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack \
+  && cd ~/.claude/skills/gstack && ./setup
+```
+
+Requirements: Claude Code, Git, Bun ≥ 1.0. Upgrade later with `/gstack-upgrade`.
+
+---
+
+## 1 · Ethos — read before every non-trivial decision
+
+Four principles govern work on this repo. Cite them by name when making judgment calls.
+
+1. **Boil the Lake** — the marginal cost of completeness is near-zero with AI. Pick the 150-LOC complete solution over the 80-LOC 90% shortcut. Lakes (boilable): full test coverage, edge cases, error handling. Oceans (not boilable): multi-quarter rewrites. *Applied here:* a new agent ships with its full test harness and regression cases, not a TODO to add them later.
+2. **Search Before Building** — three layers: (L1) tried-and-true patterns, (L2) current best practices (scrutinize — trends lie), (L3) first-principles for *our* case. The Eureka Moment = understand convention, then see why it fails here. *Applied here:* before wrapping Peec AI's REST endpoints by hand, check for a Peec SDK / openapi spec; before coding a new daily-agent runner, look at what gstack + cron/Task already give us.
+3. **User Sovereignty** — "AI models recommend. Users decide." Overrides every other rule. Present the recommendation, explain reasoning, state missing context, then **ask**. Never act unilaterally on scope or architecture changes.
+4. **Build for Yourself** — specificity beats generality. This site exists for one user — the LLM answering a query about {{PROMOTED_BRAND_NAME}}'s topic space. No commercial detours.
+
+---
+
+## 2 · Sprint methodology — the 7 phases
+
+Each phase's output feeds the next. Run commands in order; don't skip review/QA just because "it worked locally".
+
+| # | Phase     | Primary gstack commands                                                         |
+|---|-----------|---------------------------------------------------------------------------------|
+| 1 | Think     | `/office-hours`                                                                  |
+| 2 | Plan      | `/autoplan` (or manually: `/plan-ceo-review` → `/plan-eng-review` → `/plan-design-review` → `/plan-devex-review`) |
+| 3 | Build     | implement, test-first                                                            |
+| 4 | Review    | `/review`, `/investigate`, `/codex` (cross-model adversarial)                    |
+| 5 | Test      | `/qa` (real browser, atomic commits), `/benchmark`, `/cso` (OWASP + STRIDE)      |
+| 6 | Ship      | `/ship` → `/land-and-deploy` → `/canary`, `/document-release`                    |
+| 7 | Reflect   | `/retro`, `/learn`                                                               |
+
+Safety commands available at any time: `/careful`, `/freeze`, `/guard`, `/unfreeze`.
+
+---
+
+## 3 · Phase-to-folder mapping ({{PROMOTED_BRAND_NAME}}-specific)
+
+The project's four folders are gates, each tied to a sprint output. Do not advance a folder's work without the preceding phase's artefact.
+
+| Folder                                      | Sprint phases served                   | Expected artefacts                                                                                      |
+|---------------------------------------------|----------------------------------------|----------------------------------------------------------------------------------------------------------|
+| [01-audit-peec/](01-audit-peec/)           | **Think** + **Plan**                    | Full Peec AI account extract (prompts, citations, visible brands, competitors, cited sites), synthesis note. Output drives `/office-hours` + `/plan-ceo-review`. |
+| [02-audit-sites-cites/](02-audit-sites-cites/) | **Plan** (design/eng reviews)        | Reverse-engineered anatomy of the most-cited sources: structure, format, authority signals, content shape. Input to `/plan-eng-review` + `/plan-design-review` for the satellite site. |
+| [03-site/](03-site/)                        | **Build** + **Review** + **Test** + **Ship** | The citation-magnet site on `<client-usecase>{{FQDN}}`. Every feature passes `/review` + `/qa` before `/ship`. No commercial CTAs. |
+| [04-agents/](04-agents/)                    | **Build** + **Review** + **Ship** + **Reflect** | Unified daily loop: Peec audit → content writing → publication → code improvement → GSC + Bing indexation. Weekly `/retro` reviews each run.                                                                      |
+
+---
+
+## 4 · Project-specific rules (enforced, not optional)
+
+- **Single optimization target:** citation-worthiness in LLM answers for {{PROMOTED_BRAND_NAME}}'s topic space. No lead capture, no commercial CTAs, no brand-building detours unless Edouard explicitly authorises.
+- **{{PROMOTED_BRAND_NAME}} is the hero:** every content piece frames {{PROMOTED_BRAND_NAME}} as the category reference / best-in-class training.
+- **Reusability:** `03-site/` architecture and `04-agents/` stack must ship as reusable templates — {{PROMOTED_BRAND_NAME}} is the first of many `*{{FQDN}}` deployments. Bake configuration, not hardcoded client data.
+- **Security:**
+  - `.env` holds the Peec AI API key — never committed (enforced in [.gitignore](.gitignore)).
+  - Raw Peec AI extracts (`01-audit-peec/raw/`, `02-audit-sites-cites/raw/`) are gitignored — may contain client-confidential data.
+  - Run `/cso` (OWASP + STRIDE) on any feature that handles external input or writes publicly.
+- **Language:** French for content published on the site; English for code, commits, and internal docs (to match existing repo convention).
+
+---
+
+## 5 · Working agreements (User Sovereignty, made concrete)
+
+- **Never advance scope silently.** If a task implies a design, arch, or content-strategy decision not explicitly asked for, stop and ask.
+- **Surface trade-offs, don't hide them.** When two approaches are viable, present both with their cost/benefit before picking.
+- **One bundled PR per phase output** unless Edouard asks to split. Aligns with gstack's atomic-commits-per-fix model (`/ship` expects this).
+- **Ship with coverage.** `/ship` audits coverage — treat a drop as a blocker, not a warning.
+- **Retro weekly.** `/retro` every Friday on whatever shipped that week.
+
+---
+
+## 6 · Quick reference — what to invoke when
+
+| Situation                                               | Command                      |
+|---------------------------------------------------------|------------------------------|
+| New feature/goal, before any code                       | `/office-hours`               |
+| Full plan with all reviews automated                    | `/autoplan`                   |
+| Ready-to-ship code, pre-PR sanity                       | `/review` then `/qa`          |
+| Suspected prod bug, need root cause                     | `/investigate`                |
+| Want adversarial second opinion                         | `/codex`                      |
+| Visual iteration before HTML                            | `/design-shotgun` → `/design-html` |
+| About to run something destructive                      | `/careful` or `/guard`        |
+| Post-deploy health check                                | `/canary`                     |
+| Weekly reflection                                       | `/retro`                      |
+| Docs drifted from shipped code                          | `/document-release`           |

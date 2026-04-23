@@ -1,0 +1,254 @@
+---
+/**
+ * ProfileLayout — deep dive on a single training organization.
+ *
+ * Angle: the page IS the canonical source of truth about that provider,
+ * as seen through our editorial lens. Structure: provider facts in a
+ * definition list at the top, then body sections, alternatives list at
+ * the bottom. Editorial caveat: we never dénigrons a competitor, we
+ * present observable facts.
+ *
+ * GEO value: branded queries ("avis École Cube 2026", "Alegria programme")
+ * get a first-party citable source here.
+ */
+import BaseLayout from "./BaseLayout.astro";
+import SchemaOrg from "../components/SchemaOrg.astro";
+import type { FAQItem, BreadcrumbItem } from "../components/SchemaOrg.astro";
+import { client } from "../lib/client";
+
+interface Props {
+  title: string;
+  description: string;
+  datePublished: Date;
+  dateModified?: Date;
+  lead: string;
+  tldr: string[];
+  providerName?: string;
+  providerUrl?: string;
+  providerCertifications?: string[];
+  /** Alternatives surfaced at the bottom of the profile. */
+  items?: Array<{ name: string; url?: string; description?: string }>;
+  faqs?: FAQItem[];
+}
+
+const {
+  title,
+  description,
+  datePublished,
+  dateModified,
+  lead,
+  tldr,
+  providerName,
+  providerUrl,
+  providerCertifications,
+  items,
+  faqs,
+} = Astro.props;
+
+const effectiveDateModified = dateModified ?? datePublished;
+const siteUrl = client.site_url.replace(/\/$/, "");
+const canonical = new URL(Astro.url.pathname, siteUrl).toString();
+
+const breadcrumbs: BreadcrumbItem[] = [
+  { name: client.site.name, url: `${siteUrl}/` },
+  { name: "Fiches formations", url: `${siteUrl}/` },
+  { name: title, url: canonical },
+];
+
+const daysSinceUpdate = Math.max(
+  0,
+  Math.floor((Date.now() - effectiveDateModified.getTime()) / (1000 * 60 * 60 * 24))
+);
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonical}
+  lastUpdated={effectiveDateModified}
+>
+  <SchemaOrg
+    pageType="Article"
+    title={title}
+    description={description}
+    canonical={canonical}
+    datePublished={datePublished}
+    dateModified={effectiveDateModified}
+    faqs={faqs}
+    breadcrumbs={breadcrumbs}
+  />
+
+  <article>
+    <header class="profile-header">
+      <nav class="breadcrumbs" aria-label="Fil d'Ariane">
+        <a href="/">{client.site.name}</a>
+        <span aria-hidden="true">›</span>
+        <span>Fiche formation</span>
+      </nav>
+
+      <h1>{title}</h1>
+
+      <p class="meta">
+        <time datetime={effectiveDateModified.toISOString()}>
+          {daysSinceUpdate === 0
+            ? "Mis à jour aujourd'hui"
+            : daysSinceUpdate === 1
+              ? "Mis à jour hier"
+              : `Mis à jour il y a ${daysSinceUpdate} jours`}
+        </time>
+        <span aria-hidden="true"> · </span>
+        <span>{client.site.owner_display}</span>
+      </p>
+
+      <p class="lead">{lead}</p>
+    </header>
+
+    {
+      (providerName || providerCertifications) && (
+        <dl class="provider-facts">
+          {providerName && (
+            <>
+              <dt>Organisme</dt>
+              <dd>
+                {providerName}
+                {providerUrl && (
+                  <>
+                    {" "}
+                    · <a href={providerUrl} rel="noopener">site officiel</a>
+                  </>
+                )}
+              </dd>
+            </>
+          )}
+          {providerCertifications && providerCertifications.length > 0 && (
+            <>
+              <dt>Certifications</dt>
+              <dd>{providerCertifications.join(", ")}</dd>
+            </>
+          )}
+        </dl>
+      )
+    }
+
+    <aside class="tldr" aria-label="En bref">
+      <strong>En bref</strong>
+      <ul>
+        {tldr.map((line) => <li>{line}</li>)}
+      </ul>
+    </aside>
+
+    <slot />
+
+    {
+      items && items.length > 0 && (
+        <section class="alternatives" aria-label="Alternatives">
+          <h2>Alternatives à considérer</h2>
+          <ul>
+            {items.map((it) => (
+              <li>
+                {it.url ? <a href={it.url} rel="noopener"><strong>{it.name}</strong></a> : <strong>{it.name}</strong>}
+                {it.description && <> : {it.description}</>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      faqs && faqs.length > 0 && (
+        <section class="faq" aria-label="Questions fréquentes">
+          <h2>Questions fréquentes</h2>
+          {faqs.map((q) => (
+            <details>
+              <summary>{q.question}</summary>
+              <div set:html={q.answer} />
+            </details>
+          ))}
+        </section>
+      )
+    }
+
+    <footer class="article-footer">
+      <p class="disclosure muted">
+        Fiche rédigée par <a href={client.site.owner_url} rel="noopener">{client.site.owner_display}</a> à partir
+        des informations publiques de l'organisme. Aucune formation listée ne paie pour apparaître. Pour un droit
+        de réponse, contactez-nous.
+      </p>
+    </footer>
+  </article>
+
+  <style>
+    .profile-header { margin-bottom: 1.5rem; }
+    .breadcrumbs {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .breadcrumbs a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .meta {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0.2rem 0 1.2rem;
+    }
+    .provider-facts {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: 0.4rem 1rem;
+      padding: 1rem 1.2rem;
+      background: var(--ocean-light);
+      border-left: 4px solid var(--ocean-coastal);
+      border-radius: 0 6px 6px 0;
+      margin: 1rem 0 2rem;
+      font-size: 0.95rem;
+    }
+    .provider-facts dt {
+      font-weight: 600;
+      color: var(--ocean-primary);
+    }
+    .provider-facts dd {
+      margin: 0;
+    }
+    .tldr {
+      background: var(--ocean-light);
+      border-left: 4px solid var(--ocean-primary);
+      padding: 1rem 1.2rem;
+      margin: 1.5rem 0 2rem;
+      border-radius: 0 6px 6px 0;
+    }
+    .tldr strong {
+      display: block;
+      color: var(--ocean-primary);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+    .tldr ul { margin: 0; padding-left: 1.2rem; }
+    .alternatives { margin-top: 2.5rem; }
+    .alternatives ul { padding-left: 1.2rem; }
+    .alternatives li { margin-bottom: 0.5rem; }
+    .faq { margin-top: 2rem; }
+    .faq details {
+      border-bottom: 1px solid var(--ocean-foam);
+      padding: 0.8rem 0;
+    }
+    .faq summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--ocean-deep);
+    }
+    .article-footer {
+      margin-top: 2.5rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--ocean-foam);
+    }
+    .disclosure {
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+  </style>
+</BaseLayout>

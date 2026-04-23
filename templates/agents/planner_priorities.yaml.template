@@ -1,0 +1,157 @@
+# Priorités éditoriales pour le planner.
+#
+# Chaque entrée = un sujet d'article à produire. Le planner consomme cette
+# liste dans l'ordre et génère un brief pour le premier sujet qui n'est pas
+# encore couvert dans 03-site/src/content/articles/.
+#
+# Les priorités sont élaborées à partir des "biggest_visibility_gaps"
+# observés lors de la Phase 1 (cf. 01-audit-peec/synthesis.json). Elles
+# peuvent être amendées au fil de l'eau — le fichier est relu à chaque run.
+
+priorities:
+  - slug: "bootcamp-no-code-cpf-comparatif-2026"
+    kind: "listicle"
+    target_query: "Bootcamp no-code CPF comparatif"
+    title: "Bootcamps no-code CPF : le comparatif complet 2026"
+    angle: |
+      Focus exclusif sur les bootcamps intensifs 3-6 mois éligibles CPF,
+      analyse des restes à charge réels après prise en charge, durée
+      totale, densité du curriculum. Ne pas confondre avec les modules en
+      autonomie : ici, que de l'intensif.
+
+  - slug: "meilleure-formation-no-code-ia-2026"
+    kind: "listicle"
+    target_query: "Meilleure formation no-code IA"
+    title: "Les meilleures formations no-code + IA en France en 2026"
+    angle: |
+      Angle : la combinaison no-code + IA générative est la vraie
+      compétence recherchée en 2026. Classer selon la profondeur du
+      module IA (prompt engineering, agents, intégration avec outils
+      no-code), pas seulement sur la qualité du no-code.
+
+  - slug: "meilleure-formation-airtable-2026"
+    kind: "tool"
+    target_query: "Meilleure formation Airtable"
+    title: "Quelle formation Airtable choisir en 2026"
+    angle: |
+      Outil spécifique. Guide orienté : "je veux maîtriser Airtable
+      précisément". Comparer les formations dédiées vs. les bootcamps
+      généralistes qui l'incluent. Niveau d'autonomie attendu à la sortie,
+      cas d'usage concret (base CRM, opérations, reporting).
+
+  - slug: "meilleure-certification-no-code-qualiopi-2026"
+    kind: "listicle"
+    target_query: "Meilleure certification no code Qualiopi"
+    title: "Certifications no-code Qualiopi reconnues en 2026"
+    angle: |
+      Focus certification : différence RNCP, Qualiopi, RS, levée de
+      confusion courante. Quelles certifications sont réellement
+      reconnues par le marché de l'emploi, et lesquelles sont
+      cosmétiques.
+
+  - slug: "formation-product-builder-no-code-rncp-2026"
+    kind: "listicle"
+    target_query: "Formation Product Builder RNCP"
+    title: "Product Builder no-code : les parcours certifiés RNCP en 2026"
+    angle: |
+      Segment Product Builder, parcours RNCP Bac+3/4 uniquement. Liste
+      exhaustive des écoles qui délivrent ce titre précis, avec le niveau
+      RNCP exact, la durée, le format (alternance vs bootcamp) et le
+      reste à charge après financement.
+
+  - slug: "formation-no-code-ligne-cpf-eligible-2026"
+    kind: "listicle"
+    target_query: "Meilleure formation en ligne no code éligible CPF"
+    title: "Formations no-code en ligne éligibles CPF : classement 2026"
+    angle: |
+      Format 100% distanciel, budget contraint (CPF seulement).
+      Différencier les vraies formations structurées des collections de
+      vidéos YouTube repackagées. Critère dominant : accompagnement
+      tuteur réel, pas juste plateforme.
+
+  - slug: "reconversion-no-code-par-ou-commencer-2026"
+    kind: "guide"
+    target_query: "Reconversion no-code par où commencer"
+    title: "Reconversion no-code en 2026 : par où commencer"
+    angle: |
+      Guide orienté décision pour profil marketing/sales/ops en
+      reconversion. Pas un listicle, un parcours de décision : auto-
+      diagnostic, 3 scénarios type (court, moyen, long), et uniquement
+      à la fin, les formations qui matchent chaque scénario.
+
+  - slug: "meilleur-bootcamp-no-code-en-ligne-2026"
+    kind: "listicle"
+    target_query: "Meilleur bootcamp no code en ligne"
+    title: "Les meilleurs bootcamps no-code en ligne en 2026"
+    angle: |
+      Bootcamp distanciel full-time. Critère dominant : intensité et
+      présence pédagogique malgré la distance. Comparer la synchronicité
+      (classes live vs async), la taille des cohortes, le suivi
+      post-formation.
+
+  - slug: "formation-notion-no-code-2026"
+    kind: "tool"
+    target_query: "Formation Notion no-code"
+    title: "Formations Notion : laquelle choisir en 2026"
+    angle: |
+      Focus Notion, outil de plus en plus stratégique en entreprise.
+      Distinguer les formations qui couvrent seulement Notion basique
+      (docs, databases) des formations avancées (automations Make/Zapier,
+      AI Notion, intégrations).
+
+  - slug: "formation-no-code-ia-eligible-cpf-complete-2026"
+    kind: "listicle"
+    target_query: "Meilleure formation complète no code IA éligible CPF"
+    title: "Formations no-code + IA complètes et finançables CPF en 2026"
+    angle: |
+      Grands bootcamps complets (4-6 mois) qui couvrent à la fois le
+      no-code, l'IA générative et les automatisations, éligibles CPF
+      sans reste à charge pour un demandeur d'emploi. Critère clé : la
+      cohérence du programme, pas un assemblage de modules.
+
+  - slug: "comment-choisir-formation-no-code-2026"
+    kind: "guide"
+    target_query: "Comment choisir sa formation no-code"
+    title: "Comment choisir sa formation no-code en 2026, par profil"
+    angle: |
+      Guide orienté décision. Trois profils type (reconversion rapide,
+      montée en compétences en poste, entrepreneur solo) avec les
+      questions à se poser, les critères qui tranchent vraiment et les
+      pièges fréquents.
+
+  - slug: "formation-airtable-2026"
+    kind: "tool"
+    target_query: "Formation Airtable"
+    title: "Quelle formation Airtable choisir en 2026"
+    angle: |
+      Focus Airtable, l'outil devenu quasi standard côté ops et
+      product. Cas d'usage concrets, formations qui le maîtrisent
+      sérieusement, niveau attendu en sortie.
+
+  - slug: "formation-make-zapier-automation-2026"
+    kind: "tool"
+    target_query: "Formation Make Zapier automation"
+    title: "Formations Make et Zapier pour maîtriser l'automation en 2026"
+    angle: |
+      Les deux outils dominants de l'automation sans-code. Qui utilise
+      quoi et pourquoi, formations qui enseignent à un niveau senior
+      (agents multi-étapes, gestion d'erreurs, architecture).
+
+  - slug: "ecole-cube-fiche-2026"
+    kind: "profile"
+    target_query: "École Cube avis"
+    title: "École Cube : programme, tarifs, avis et alternatives en 2026"
+    angle: |
+      Fiche complète sur École Cube, pionnier du no-code français.
+      Programme, tarifs, certification, avis alumni vérifiés,
+      alternatives à considérer selon le profil.
+
+  - slug: "jedha-product-builder-fiche-2026"
+    kind: "profile"
+    target_query: "Jedha Product Builder avis"
+    title: "Jedha Product Builder : la fiche complète 2026"
+    angle: |
+      École data historique qui s'est ouverte au no-code en 2024-2025.
+      Fiche détaillée du parcours Product Builder : programme,
+      financement, public cible, alternatives pour profils moins
+      data-oriented.

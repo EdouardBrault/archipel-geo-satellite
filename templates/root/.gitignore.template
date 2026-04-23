@@ -1,0 +1,52 @@
+# Secrets — NEVER commit
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+credentials.json
+
+# Extracted API data (may contain sensitive client info)
+01-audit-peec/raw/
+02-audit-sites-cites/raw/
+
+# Agent runtime state + draft logs — regenerable, may be noisy
+# Ignore all contents of state/, but keep peec_latest.json committed
+# (it's the day-over-day diff baseline for the audit agent, must survive
+# across CI runs). Use content-wildcard + negation; ignoring the dir
+# itself would swallow the negation.
+04-agents/state/*
+!04-agents/state/peec_latest.json
+04-agents/logs/
+
+# Node / build
+node_modules/
+dist/
+build/
+.next/
+.turbo/
+.cache/
+.vercel/
+.wrangler/
+.astro/
+out/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Logs
+*.log
+logs/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+Thumbs.db

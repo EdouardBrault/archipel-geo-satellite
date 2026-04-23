@@ -1,0 +1,72 @@
+name: Daily Peec audit
+
+# Pulls a fresh Peec snapshot every morning and alerts Slack on shifts.
+# Does not touch content — read-only.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"  # every day 06:00 UTC
+
+concurrency:
+  group: agents-audit
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kill-switch check
+        run: |
+          if [ "${{ vars.AGENTS_ENABLED }}" != "true" ]; then
+            echo "::notice ::AGENTS_ENABLED is not 'true', exiting."
+            exit 78
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: 04-agents/requirements.txt
+
+      - name: Install deps
+        working-directory: 04-agents
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run audit
+        working-directory: 04-agents
+        env:
+          PEEC_AI_API_KEY: ${{ secrets.PEEC_AI_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          AGENTS_ENABLED: ${{ vars.AGENTS_ENABLED }}
+        run: python audit_peec.py
+
+      # Persist the latest snapshot so tomorrow's run can compare.
+      # The file is un-gitignored (only peec_latest.json, not the jsonl).
+      # The commit path is outside 03-site/** so it does not trigger the
+      # site deploy workflow.
+      - name: Commit snapshot
+        env:
+          GIT_AUTHOR_NAME: "Archipel Agent"
+          GIT_AUTHOR_EMAIL: "agents@archipelmarketing.com"
+          GIT_COMMITTER_NAME: "Archipel Agent"
+          GIT_COMMITTER_EMAIL: "agents@archipelmarketing.com"
+        run: |
+          git config user.email "agents@archipelmarketing.com"
+          git config user.name "Archipel Agent"
+          git add 04-agents/state/peec_latest.json
+          if git diff --cached --quiet; then
+            echo "No snapshot change to commit."
+            exit 0
+          fi
+          git commit -m "Daily Peec snapshot ($(date -u +%Y-%m-%d))"
+          git push origin main

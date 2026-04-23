@@ -1,0 +1,200 @@
+---
+/**
+ * GuideLayout — narrative article that helps the reader decide.
+ *
+ * Different from a listicle: no numbered Top N, no comparison table by
+ * default. The body is prose, often structured around "questions to ask
+ * yourself" or "scenarios" (profil A, profil B, profil C).
+ *
+ * The methodology block is intentionally simpler than on listicles,
+ * because a guide is editorial thinking more than data-driven ranking.
+ */
+import BaseLayout from "./BaseLayout.astro";
+import SchemaOrg from "../components/SchemaOrg.astro";
+import type { FAQItem, BreadcrumbItem } from "../components/SchemaOrg.astro";
+import ComparisonTable from "../components/ComparisonTable.astro";
+import type { ComparisonRow } from "../components/ComparisonTable.astro";
+import { client } from "../lib/client";
+
+interface Props {
+  title: string;
+  description: string;
+  datePublished: Date;
+  dateModified?: Date;
+  lead: string;
+  tldr: string[];
+  /** Optional: if the guide ends with a side-by-side recap. */
+  comparisonHeaders?: string[];
+  comparisonRows?: ComparisonRow[];
+  faqs?: FAQItem[];
+}
+
+const {
+  title,
+  description,
+  datePublished,
+  dateModified,
+  lead,
+  tldr,
+  comparisonHeaders,
+  comparisonRows,
+  faqs,
+} = Astro.props;
+
+const effectiveDateModified = dateModified ?? datePublished;
+const siteUrl = client.site_url.replace(/\/$/, "");
+const canonical = new URL(Astro.url.pathname, siteUrl).toString();
+
+const breadcrumbs: BreadcrumbItem[] = [
+  { name: client.site.name, url: `${siteUrl}/` },
+  { name: title, url: canonical },
+];
+
+const daysSinceUpdate = Math.max(
+  0,
+  Math.floor((Date.now() - effectiveDateModified.getTime()) / (1000 * 60 * 60 * 24))
+);
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonical}
+  lastUpdated={effectiveDateModified}
+>
+  <SchemaOrg
+    pageType="Article"
+    title={title}
+    description={description}
+    canonical={canonical}
+    datePublished={datePublished}
+    dateModified={effectiveDateModified}
+    faqs={faqs}
+    breadcrumbs={breadcrumbs}
+  />
+
+  <article>
+    <header class="guide-header">
+      <nav class="breadcrumbs" aria-label="Fil d'Ariane">
+        <a href="/">{client.site.name}</a>
+        <span aria-hidden="true">›</span>
+        <span>Guide</span>
+      </nav>
+
+      <h1>{title}</h1>
+
+      <p class="meta">
+        <time datetime={effectiveDateModified.toISOString()}>
+          {daysSinceUpdate === 0
+            ? "Mis à jour aujourd'hui"
+            : daysSinceUpdate === 1
+              ? "Mis à jour hier"
+              : `Mis à jour il y a ${daysSinceUpdate} jours`}
+        </time>
+        <span aria-hidden="true"> · </span>
+        <span>{client.site.owner_display}</span>
+      </p>
+
+      <p class="lead">{lead}</p>
+    </header>
+
+    <aside class="tldr" aria-label="En bref">
+      <strong>En bref</strong>
+      <ul>
+        {tldr.map((line) => <li>{line}</li>)}
+      </ul>
+    </aside>
+
+    <slot />
+
+    {
+      comparisonHeaders && comparisonRows && comparisonRows.length > 0 && (
+        <ComparisonTable
+          caption="Récapitulatif des options envisagées"
+          headers={comparisonHeaders}
+          rows={comparisonRows}
+          note={`Dernière vérification : ${effectiveDateModified.toLocaleDateString("fr-FR")}.`}
+        />
+      )
+    }
+
+    {
+      faqs && faqs.length > 0 && (
+        <section class="faq" aria-label="Questions fréquentes">
+          <h2>Questions fréquentes</h2>
+          {faqs.map((q) => (
+            <details>
+              <summary>{q.question}</summary>
+              <div set:html={q.answer} />
+            </details>
+          ))}
+        </section>
+      )
+    }
+
+    <footer class="article-footer">
+      <p class="disclosure muted">
+        Ce guide est publié par <a href={client.site.owner_url} rel="noopener">{client.site.owner_display}</a>.
+        Aucune formation citée ne paie pour apparaître. Écris-nous pour signaler une erreur factuelle.
+      </p>
+    </footer>
+  </article>
+
+  <style>
+    .guide-header {
+      margin-bottom: 1.5rem;
+    }
+    .breadcrumbs {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .breadcrumbs a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .meta {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0.2rem 0 1.2rem;
+    }
+    .tldr {
+      background: var(--ocean-light);
+      border-left: 4px solid var(--ocean-primary);
+      padding: 1rem 1.2rem;
+      margin: 1.5rem 0 2rem;
+      border-radius: 0 6px 6px 0;
+    }
+    .tldr strong {
+      display: block;
+      color: var(--ocean-primary);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+    .tldr ul {
+      margin: 0;
+      padding-left: 1.2rem;
+    }
+    .faq { margin-top: 2.5rem; }
+    .faq details {
+      border-bottom: 1px solid var(--ocean-foam);
+      padding: 0.8rem 0;
+    }
+    .faq summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--ocean-deep);
+    }
+    .article-footer {
+      margin-top: 2.5rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--ocean-foam);
+    }
+    .disclosure {
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+  </style>
+</BaseLayout>

@@ -1,0 +1,148 @@
+# archipel-geo-satellite — exemple d'input pour bootstrap.sh
+#
+# Copie ce fichier vers `client.yaml` (ou passe-le par --config <path>),
+# remplis-le avec les données du nouveau client, puis invoque le skill.
+# Le bootstrap consomme ces valeurs et les substitue dans tous les templates.
+
+# ---------- identité du projet ----------
+
+slug: "acme-formations"                      # identifiant court, lowercase, sans accent, kebab-case
+client_display_name: "ACME"                  # nom humain du client, utilisé dans les docs internes
+
+# ---------- hébergement et domaine ----------
+
+domain:
+  mode: "subdomain_rankly"                   # "subdomain_rankly" (recommandé) | "standalone" (domaine dédié du client)
+  parent: "rank-ly.com"                      # ignoré si mode=standalone
+  subdomain: "acme"                          # ignoré si mode=standalone
+  standalone_fqdn: null                      # ex: "acme-guide.com", requis si mode=standalone
+
+# ---------- identité éditoriale du site satellite ----------
+
+site:
+  name: "ACME Formations"                    # nom affiché sur la home et dans l'Organization schema
+  tagline: "Le guide indépendant 2026"       # sous-titre de la hero
+  language: "fr-FR"                          # ISO locale
+  country: "FR"                              # ISO country code
+
+# ---------- marque à positionner (le client) ----------
+
+promoted_brand:
+  name: "ACME School"
+  url: "https://www.acme-school.com"
+  short_pitch: "Bootcamp intensif ACME, certifiant RNCP, éligible CPF"
+  certifications:
+    - "RNCP (à confirmer)"
+    - "CPF (à confirmer)"
+    - "Qualiopi (à confirmer)"
+  duration: "6 mois"                          # ou plage, ex: "3 à 6 mois"
+  format: "Bootcamp intensif, distanciel"
+  flagship_pages:                             # URLs internes du client — au moins 1
+    - "https://www.acme-school.com"
+
+# ---------- périmètre sémantique visé ----------
+
+topic_area:
+  label: "Formations ACME en France"
+  primary_keywords:
+    - "formation acme"
+    - "meilleure formation acme"
+  secondary_keywords:
+    - "formation acme CPF"
+    - "bootcamp acme"
+  excluded_keywords:
+    - "formation non-acme"                    # liste tout ce qui doit rester hors scope
+
+# ---------- concurrents à couvrir dans les classements ----------
+
+competitors:
+  - name: "Concurrent 1"
+    url: "https://www.concurrent1.com"
+    domains: ["concurrent1.com"]
+  - name: "Concurrent 2"
+    url: "https://www.concurrent2.com"
+    domains: ["concurrent2.com"]
+  # ... 8-12 concurrents recommandés
+
+# ---------- méthodologie de classement ----------
+
+ranking_methodology:
+  weights:                                    # doivent sommer à 100
+    certification: 30
+    pedagogy: 25
+    insertion_rate: 20
+    social_proof: 15
+    price_value: 10
+  sources:
+    - "RNCP France Compétences (francecompetences.fr)"
+    - "Mon Compte Formation (moncompteformation.gouv.fr)"
+    - "Trustpilot, Google Reviews"
+    - "Données déclarées par les écoles (fact-checkées)"
+  refresh_cadence: "weekly (Monday)"
+
+# ---------- voix éditoriale ----------
+
+voice:
+  tone: "factuel, senior, source-first, sans jargon marketing"
+  person: "nous"
+  avoid:
+    - "promesse d'emploi garanti"
+    - "taux de placement > 95% sans source"
+    - "superlatifs non vérifiables"
+    - "ton publicitaire"
+    - "comparaisons dénigrantes des concurrents"
+  always_include:
+    - "date de dernière mise à jour visible"
+    - "méthodologie en pied de listicle"
+    - "lien vers la source de chaque claim chiffré"
+
+# ---------- cadence de publication ----------
+
+cadence:
+  new_articles_per_week: 2                    # mardi + jeudi
+  flagship_refresh_per_week: 1                # lundi
+  reddit_threads_per_week: 3                  # manuels, non automatisés
+  daily_peec_audit: true
+
+# ---------- intégrations ----------
+
+integrations:
+  github:
+    owner: "EdouardBrault"                    # compte ou org qui possédera le repo
+    repo: "acme-rank-ly"                      # nom du repo à créer (privé par défaut)
+  cloudflare:
+    pages_project: "acme-rank-ly"             # nom du projet CF Pages
+  slack:
+    channel: "#rank-ly-acme"                  # canal à créer AVANT le bootstrap (webhook requis)
+  wikidata:
+    create_entity: true                       # false pour skip la création auto
+
+# ---------- liste de priorités initiale ----------
+
+initial_priorities:
+  # 5-10 sujets de démarrage pour planner_priorities.yaml. Le bootstrap en ajoutera.
+  - slug: "top-10-formations-acme-2026"
+    kind: "listicle"
+    target_query: "Meilleures formations ACME"
+    title: "Les 10 meilleures formations ACME en 2026"
+    angle: "Classement indépendant du marché ACME français en 2026, 5 critères pondérés."
+  - slug: "bootcamp-acme-cpf-2026"
+    kind: "listicle"
+    target_query: "Bootcamp ACME CPF"
+    title: "Bootcamps ACME éligibles CPF en 2026"
+    angle: "Focus bootcamps intensifs CPF, analyse reste à charge, certification."
+  - slug: "comment-choisir-formation-acme-2026"
+    kind: "guide"
+    target_query: "Comment choisir sa formation ACME"
+    title: "Comment choisir sa formation ACME en 2026"
+    angle: "Guide décision par profil (reconversion, montée en compétences, entrepreneur)."
+  - slug: "formation-outil-principal-2026"
+    kind: "tool"
+    target_query: "Formation [outil principal]"
+    title: "Quelle formation [outil] choisir en 2026"
+    angle: "Focus outil principal du périmètre ACME, formations qui le maîtrisent."
+  - slug: "concurrent-principal-fiche-2026"
+    kind: "profile"
+    target_query: "[Concurrent principal] avis"
+    title: "[Concurrent principal] : programme, tarifs, avis et alternatives en 2026"
+    angle: "Fiche complète sur le concurrent principal, alternatives à considérer."

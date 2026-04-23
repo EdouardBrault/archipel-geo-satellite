@@ -1,0 +1,291 @@
+---
+/**
+ * BaseLayout — applied to every page.
+ *
+ * Emits the full head stack that LLM crawlers and search engines expect:
+ *   - Canonical URL (absolute)
+ *   - Meta description
+ *   - Open Graph + Twitter cards (preview-friendly when shared)
+ *   - JSON-LD WebSite + Organization (site-wide schema.org baseline)
+ *   - Preconnect / dns-prefetch for Google Fonts
+ *
+ * Pages then emit their *own* JSON-LD via the <SchemaOrg /> component for
+ * page-specific types (Article, Course, ItemList, FAQPage, BreadcrumbList).
+ */
+import { client } from "../lib/client";
+
+interface Props {
+  title: string;
+  description: string;
+  /** Relative or absolute URL — resolved to absolute against site URL. */
+  canonical?: string;
+  /** Date of last meaningful edit — surfaces as <time> in the UI and in JSON-LD. */
+  lastUpdated?: Date;
+  /** Opt-in override for robots (default is index,follow). */
+  robots?: string;
+}
+
+const { title, description, canonical, lastUpdated, robots = "index,follow" } =
+  Astro.props;
+
+const siteUrl = Astro.site?.toString().replace(/\/$/, "") ?? "";
+const pagePath = Astro.url.pathname;
+const canonicalUrl = new URL(canonical ?? pagePath, siteUrl).toString();
+
+const orgSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: client.site.name,
+  url: siteUrl,
+  // sameAs identities pulled from client config. Never include the
+  // client brand's domain here — see memory
+  // feedback_never_disclose_client.md for the rule.
+  sameAs: [...(client.site.same_as ?? [])],
+};
+
+const webSiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  url: siteUrl,
+  name: "{{SITE_NAME}}",
+  inLanguage: "fr-FR",
+};
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
+
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="{{SITE_NAME}}, articles récents"
+      href="/rss.xml"
+    />
+
+    {/* Open Graph / Twitter */}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content="fr_FR" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    {
+      lastUpdated && (
+        <meta
+          property="article:modified_time"
+          content={lastUpdated.toISOString()}
+        />
+      )
+    }
+
+    {/* Site-wide schema.org baseline */}
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(orgSchema)}
+    />
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(webSiteSchema)}
+    />
+
+    {/* Fonts */}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style is:global>
+      :root {
+        --ocean-deep: #0b2838;
+        --ocean-primary: #1e5f8b;
+        --ocean-coastal: #4a9dba;
+        --ocean-foam: #d4e8f0;
+        --ocean-light: #ebf5f9;
+        --coral: #e88b6e;
+        --seafoam: #8fc5a5;
+        --ink: #0b2838;
+        --muted: #5f7a8a;
+        --bg: #fafcfd;
+        --max-w: 760px;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        font-family: "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.6;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        max-width: var(--max-w);
+        margin: 0 auto;
+        padding: 2rem 1.25rem 4rem;
+      }
+
+      h1 {
+        font-size: clamp(1.9rem, 4vw, 2.6rem);
+        line-height: 1.2;
+        color: var(--ocean-deep);
+        margin: 0 0 1rem;
+      }
+
+      h2 {
+        font-size: 1.45rem;
+        color: var(--ocean-primary);
+        margin: 2.2rem 0 0.6rem;
+      }
+
+      h3 {
+        font-size: 1.15rem;
+        color: var(--ocean-deep);
+        margin: 1.5rem 0 0.4rem;
+      }
+
+      a {
+        color: var(--ocean-primary);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+
+      a:hover {
+        color: var(--coral);
+      }
+
+      p {
+        margin: 0 0 1rem;
+      }
+
+      .lead {
+        font-size: 1.1rem;
+        color: var(--ink);
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .tldr {
+        background: var(--ocean-light);
+        border-left: 4px solid var(--ocean-primary);
+        padding: 1rem 1.2rem;
+        margin: 1.5rem 0;
+        border-radius: 0 6px 6px 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        font-size: 0.95rem;
+      }
+
+      th,
+      td {
+        padding: 0.6rem 0.8rem;
+        border-bottom: 1px solid var(--ocean-foam);
+        text-align: left;
+      }
+
+      th {
+        background: var(--ocean-primary);
+        color: white;
+      }
+
+      tr:nth-child(even) td {
+        background: var(--ocean-light);
+      }
+
+      nav.site {
+        background: var(--ocean-deep);
+        color: white;
+        padding: 0.9rem 1.25rem;
+      }
+
+      nav.site .inner {
+        max-width: var(--max-w);
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.92rem;
+      }
+
+      nav.site a {
+        color: var(--ocean-foam);
+        text-decoration: none;
+        margin-left: 1.2rem;
+      }
+
+      nav.site a:hover {
+        color: var(--coral);
+      }
+
+      nav.site strong {
+        color: white;
+      }
+
+      footer.site {
+        margin-top: 4rem;
+        padding: 1.6rem 1.25rem;
+        background: var(--ocean-deep);
+        color: var(--ocean-foam);
+        font-size: 0.85rem;
+        text-align: center;
+      }
+
+      footer.site a {
+        color: var(--ocean-foam);
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav class="site">
+      <div class="inner">
+        <strong>{{SITE_NAME}}</strong>
+        <div>
+          <a href="/">Accueil</a>
+          <a href="/a-propos/">À propos</a>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="site">
+      <div>
+        Édité par <a href="https://archipelmarketing.com" rel="noopener">Archipel
+        Marketing</a> &middot; Mis à jour {new Date().toLocaleDateString("fr-FR")}
+      </div>
+    </footer>
+  </body>
+</html>

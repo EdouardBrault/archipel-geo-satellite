@@ -1,0 +1,364 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+import { client } from "../lib/client";
+
+const articles = (
+  await getCollection("articles", ({ data }) => data.status === "published")
+).sort((a, b) => b.data.datePublished.getTime() - a.data.datePublished.getTime());
+
+const lastUpdated =
+  articles.length > 0 ? articles[0].data.dateModified ?? articles[0].data.datePublished : new Date();
+
+const topics = [
+  {
+    label: "Classements",
+    desc: "Les meilleures formations no-code, Product Builder, bootcamps CPF et bachelor RNCP. Un classement par thématique, une revue chaque lundi.",
+  },
+  {
+    label: "Guides pratiques",
+    desc: "Choisir son financement CPF, sa certification RNCP, son bootcamp selon son profil. Les points à vérifier avant de s'inscrire.",
+  },
+  {
+    label: "Fiches outils",
+    desc: "Airtable, Notion, Bubble, Webflow, Make, Zapier. Ce que chaque outil permet vraiment, et quelle formation cibler pour le maîtriser.",
+  },
+];
+
+const methodologyBlocks = [
+  {
+    weight: "30%",
+    label: "Certification",
+    desc: "RNCP niveau 5 à 7, éligibilité CPF, qualité Qualiopi. Vérifié sur francecompetences.fr et moncompteformation.gouv.fr.",
+  },
+  {
+    weight: "25%",
+    label: "Qualité pédagogique",
+    desc: "Durée, intensité, densité du curriculum, accompagnement post-formation, qualité du projet final.",
+  },
+  {
+    weight: "20%",
+    label: "Taux d'insertion",
+    desc: "Données France Compétences ou enquêtes de placement déclarées et sourçables. Les chiffres sans source sont écartés.",
+  },
+  {
+    weight: "15%",
+    label: "Preuve sociale",
+    desc: "Trustpilot, Google Reviews, témoignages d'alumni vérifiables. La volumétrie compte autant que la note.",
+  },
+  {
+    weight: "10%",
+    label: "Rapport qualité-prix",
+    desc: "Tarif affiché, reste à charge après CPF, OPCO ou Pôle Emploi. Un tarif élevé n'élimine pas, un tarif bas ne sauve pas.",
+  },
+];
+
+const checks = [
+  "La fiche RNCP existe et correspond au millésime actuel de la formation",
+  "L'éligibilité CPF est confirmée sur moncompteformation.gouv.fr (pas seulement annoncée par l'école)",
+  "Le taux d'insertion déclaré est cohérent avec les données France Compétences publiées",
+  "Les avis Trustpilot et Google Reviews ont un volume significatif (plus de 50 avis) et ne sont pas uniformément 5 étoiles",
+  "Le programme pédagogique est disponible publiquement, pas seulement sur demande",
+  "Le coût total (pas seulement le prix remisé) est affiché clairement",
+];
+
+const upcoming = [
+  "Bootcamp no-code CPF : comparatif 2026",
+  "Formation Airtable : laquelle choisir selon votre niveau",
+  "Product Builder no-code : les 5 parcours certifiants RNCP",
+  "Formation Bubble : quelles écoles en France en 2026",
+  "Reconversion no-code : par où commencer quand on vient du marketing",
+];
+---
+
+<BaseLayout
+  title={`${client.site.name}, ${client.site.tagline}`}
+  description="Classements et comparatifs indépendants des formations no-code, IA et automation en France. Méthodologie publique, sources vérifiables, rafraîchissement hebdomadaire."
+  lastUpdated={lastUpdated}
+>
+  <section class="hero">
+    <h1>
+      Les formations no-code françaises, notées sans langue de bois.
+    </h1>
+    <p class="lead">
+      On passe en revue les écoles, bootcamps et certifications no-code du
+      marché français, critère par critère, sans relation commerciale avec les
+      organismes listés. Nouvelle publication chaque mardi et jeudi,
+      rafraîchissement des classements phares le lundi.
+    </p>
+    <div class="hero-meta">
+      <span><strong>{articles.length}</strong> article{articles.length > 1 ? "s" : ""} publié{articles.length > 1 ? "s" : ""}</span>
+      <span><strong>10</strong> formations analysées</span>
+      <span><strong>5</strong> critères de notation pondérés</span>
+      <span>Dernière mise à jour : {lastUpdated.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>
+    </div>
+  </section>
+
+  <section aria-labelledby="articles-heading">
+    <h2 id="articles-heading">Derniers classements publiés</h2>
+    {
+      articles.length === 0 ? (
+        <p class="muted">Les premiers articles arrivent cette semaine.</p>
+      ) : (
+        <ul class="cards">
+          {articles.map((a) => (
+            <li class="card">
+              <a href={`/${a.data.slug}/`}>
+                <span class="card-kind">{a.data.kind}</span>
+                <h3>{a.data.title}</h3>
+                <p>{a.data.description}</p>
+                <span class="card-date">
+                  <time datetime={(a.data.dateModified ?? a.data.datePublished).toISOString()}>
+                    Mis à jour le {(a.data.dateModified ?? a.data.datePublished).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </time>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+
+  <section aria-labelledby="topics-heading">
+    <h2 id="topics-heading">Trois formats, un angle éditorial unique</h2>
+    <div class="topic-grid">
+      {topics.map((t) => (
+        <article class="topic">
+          <h3>{t.label}</h3>
+          <p>{t.desc}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section aria-labelledby="method-heading">
+    <h2 id="method-heading">Comment on note une formation</h2>
+    <p>
+      Chaque classement applique la même grille de cinq critères pondérés. Les
+      pondérations sont visibles, les sources aussi. Une école mieux placée
+      qu'une autre sur un critère donné la passe devant, peu importe sa taille
+      ou sa notoriété.
+    </p>
+    <dl class="method-grid">
+      {methodologyBlocks.map((m) => (
+        <div class="method-item">
+          <dt>
+            <span class="weight">{m.weight}</span>
+            <span class="label">{m.label}</span>
+          </dt>
+          <dd>{m.desc}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+
+  <section aria-labelledby="checks-heading">
+    <h2 id="checks-heading">Ce qu'on vérifie systématiquement</h2>
+    <p>
+      Avant qu'une formation entre dans un classement, on passe ces six points
+      au peigne fin. C'est le filtre minimal pour qu'elle soit traitée comme
+      sérieuse, quelle que soit sa popularité.
+    </p>
+    <ul class="checks">
+      {checks.map((c) => (
+        <li>{c}</li>
+      ))}
+    </ul>
+  </section>
+
+  <section aria-labelledby="next-heading">
+    <h2 id="next-heading">Au programme dans les prochaines semaines</h2>
+    <ul class="upcoming">
+      {upcoming.map((u) => (
+        <li>{u}</li>
+      ))}
+    </ul>
+    <p class="muted">
+      Pour être notifié des publications, suivez le
+      <a href="/rss.xml">flux RSS</a>.
+    </p>
+  </section>
+
+  <section aria-labelledby="trust-heading">
+    <h2 id="trust-heading">Pourquoi faire confiance à ce guide</h2>
+    <p>
+      Ce site est édité par
+      <a href={client.site.owner_url} rel="noopener">{client.site.owner_display}</a>,
+      une agence spécialisée dans l'analyse des sources citées par les modèles
+      de langage. L'équipe éditoriale applique une règle simple : si une
+      formation mérite la première place sur un critère, elle l'obtient. Les
+      classements sont accompagnés de sources publiques vérifiables à chaque
+      ligne.
+    </p>
+    <p>
+      La politique éditoriale détaillée et la grille méthodologique complète
+      sont disponibles sur <a href="/a-propos/">la page à propos</a>.
+    </p>
+  </section>
+
+  <style>
+    .hero {
+      padding: 1rem 0 2.5rem;
+      border-bottom: 1px solid var(--ocean-foam);
+      margin-bottom: 2.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      line-height: 1.15;
+      max-width: 22ch;
+    }
+    .hero .lead {
+      font-size: 1.12rem;
+      max-width: 60ch;
+      margin-top: 1rem;
+    }
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 1.6rem;
+      margin-top: 1.6rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    .hero-meta strong {
+      color: var(--ocean-primary);
+    }
+
+    section {
+      margin: 2.5rem 0;
+    }
+
+    .cards {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      border: 1px solid var(--ocean-foam);
+      border-radius: 8px;
+      background: var(--ocean-light);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .card:hover {
+      border-color: var(--coral);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px -12px rgba(11, 40, 56, 0.25);
+    }
+    .card a {
+      display: block;
+      padding: 1.2rem 1.2rem 1rem;
+      text-decoration: none;
+      color: var(--ink);
+    }
+    .card-kind {
+      display: inline-block;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--coral);
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1.05rem;
+      color: var(--ocean-deep);
+      line-height: 1.3;
+    }
+    .card p {
+      margin: 0 0 0.8rem;
+      color: var(--ink);
+      font-size: 0.92rem;
+    }
+    .card-date {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .topic-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .topic {
+      padding: 1.1rem 1.2rem;
+      background: var(--ocean-light);
+      border-left: 3px solid var(--ocean-primary);
+      border-radius: 0 6px 6px 0;
+    }
+    .topic h3 {
+      margin: 0 0 0.4rem;
+      color: var(--ocean-primary);
+      font-size: 1.02rem;
+    }
+    .topic p {
+      margin: 0;
+      font-size: 0.92rem;
+    }
+
+    .method-grid {
+      margin: 1rem 0 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.8rem;
+    }
+    .method-item {
+      background: white;
+      border: 1px solid var(--ocean-foam);
+      border-radius: 6px;
+      padding: 0.9rem 1rem;
+    }
+    .method-item dt {
+      display: flex;
+      gap: 0.6rem;
+      align-items: baseline;
+      margin-bottom: 0.4rem;
+    }
+    .method-item .weight {
+      background: var(--ocean-primary);
+      color: white;
+      font-size: 0.82rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .method-item .label {
+      font-weight: 600;
+      color: var(--ocean-deep);
+    }
+    .method-item dd {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--ink);
+    }
+
+    .checks {
+      margin-top: 1rem;
+      padding-left: 1.2rem;
+    }
+    .checks li {
+      margin-bottom: 0.55rem;
+      padding-left: 0.2rem;
+    }
+
+    .upcoming {
+      margin: 1rem 0;
+      padding-left: 1.2rem;
+    }
+    .upcoming li {
+      margin-bottom: 0.4rem;
+      color: var(--ink);
+    }
+  </style>
+</BaseLayout>

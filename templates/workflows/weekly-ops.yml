@@ -1,0 +1,65 @@
+name: Weekly ops — queue replenish + monitor digest
+
+# Sunday 10:00 UTC: top up the editorial queue if needed, then post the
+# weekly digest to Slack. These two run back to back since they share the
+# same inputs (peec snapshot, priorities file, article list).
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 10 * * 0"  # Sunday 10:00 UTC
+
+concurrency:
+  group: agents-ops
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  ops:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kill-switch check
+        run: |
+          if [ "${{ vars.AGENTS_ENABLED }}" != "true" ]; then
+            echo "::notice ::AGENTS_ENABLED is not 'true', exiting."
+            exit 78
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: 04-agents/requirements.txt
+
+      - name: Install deps
+        working-directory: 04-agents
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Replenish queue
+        working-directory: 04-agents
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          AGENTS_ENABLED: ${{ vars.AGENTS_ENABLED }}
+          GIT_AUTHOR_NAME: "Archipel Agent"
+          GIT_AUTHOR_EMAIL: "agents@archipelmarketing.com"
+          GIT_COMMITTER_NAME: "Archipel Agent"
+          GIT_COMMITTER_EMAIL: "agents@archipelmarketing.com"
+        run: python replenish_queue.py
+
+      - name: Weekly digest
+        working-directory: 04-agents
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          AGENTS_ENABLED: ${{ vars.AGENTS_ENABLED }}
+        run: python monitor.py

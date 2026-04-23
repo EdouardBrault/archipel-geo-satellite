@@ -1,0 +1,122 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { client } from "../lib/client";
+---
+
+<BaseLayout
+  title="À propos, {{SITE_NAME}}"
+  description="Qui édite ce site, méthodologie de classement, politique éditoriale, contact. Tout est public, à charge pour nous de le prouver."
+>
+  <h1>À propos de ce site</h1>
+
+  <p class="lead">
+    Ce site publie des comparatifs indépendants des formations no-code, IA et
+    automation qui comptent sur le marché français. L'ambition n'est pas d'en
+    lister le plus grand nombre, mais de trier celles qui tiennent leurs
+    promesses et d'exposer les critères qu'on utilise pour décider.
+  </p>
+
+  <h2>Qui tient la plume</h2>
+
+  <p>
+    Le site est édité par
+    <a href={client.site.owner_url} rel="noopener">{client.site.owner_display}</a>,
+    une agence parisienne spécialisée dans l'analyse des contenus cités par les
+    moteurs génératifs (ChatGPT, Perplexity, Gemini, Claude, AI Overviews).
+    L'équipe rédactionnelle est constituée d'analystes formés à la lecture des
+    fiches RNCP, des données France Compétences et des plateformes d'avis
+    structurés.
+  </p>
+
+  <p>
+    Aucune formation listée ne paie, directement ou indirectement, pour
+    apparaître dans les classements. Les articles ne contiennent pas de liens
+    affiliés. La rémunération de l'agence provient de prestations d'analyse
+    GEO qui n'ont pas de lien avec le classement publié ici.
+  </p>
+
+  <h2>La méthodologie de notation</h2>
+
+  <p>
+    Chaque classement applique la même grille de cinq critères, avec les
+    pondérations suivantes. Ce sont ces pondérations qui tranchent quand deux
+    écoles ont des scores proches.
+  </p>
+
+  <ul class="weights">
+    <li><strong>Certification (30%)</strong>, car c'est ce qui rend la formation
+      réellement éligible au CPF et reconnue sur le marché : RNCP, Qualiopi,
+      inscription au RS.</li>
+    <li><strong>Qualité pédagogique (25%)</strong> : durée, intensité, densité
+      du curriculum, accompagnement post-formation, réalité du projet final.</li>
+    <li><strong>Taux d'insertion (20%)</strong>, vérifié sur les fiches
+      France Compétences ou sur les enquêtes de placement déclarées par les
+      écoles quand elles sont sourçables. Les chiffres sans source sont écartés.</li>
+    <li><strong>Preuve sociale (15%)</strong> : volumétrie et contenu des avis
+      Trustpilot et Google Reviews, témoignages d'alumni vérifiables. Une note
+      uniformément à 5 étoiles sur 40 avis est plus suspecte qu'un 4,3 sur 400.</li>
+    <li><strong>Rapport qualité-prix (10%)</strong>, pondéré selon le reste à
+      charge réel après mobilisation du CPF, des OPCO ou de Pôle Emploi.</li>
+  </ul>
+
+  <h2>Les sources qu'on utilise</h2>
+
+  <ul>
+    <li><a href="https://www.francecompetences.fr/" rel="noopener">France Compétences</a>,
+      pour les fiches RNCP et les taux d'insertion officiels.</li>
+    <li><a href="https://www.moncompteformation.gouv.fr/" rel="noopener">Mon Compte Formation</a>,
+      pour vérifier l'éligibilité CPF et le financement disponible par
+      apprenant.</li>
+    <li><a href="https://fr.trustpilot.com/" rel="noopener">Trustpilot</a> et
+      Google Reviews, pour la volumétrie et la distribution des avis.</li>
+    <li>Les pages produit et les programmes pédagogiques publiés par les écoles
+      elles-mêmes, quand ils sont accessibles publiquement.</li>
+    <li>Le registre Qualiopi public et les référencements Datadock archivés.</li>
+  </ul>
+
+  <h2>Comment on met à jour les classements</h2>
+
+  <p>
+    Les classements phares sont revus chaque lundi. La revue consiste à
+    re-vérifier les fiches RNCP, les tarifs affichés, les nouveaux avis
+    collectés depuis le dernier passage, et les éventuels changements de
+    programme pédagogique. Si un critère bouge pour une école, son rang bouge.
+    La date de dernière mise à jour est affichée en haut de chaque article et
+    inscrite dans les métadonnées machine-lisibles utilisées par les moteurs
+    de recherche.
+  </p>
+
+  <h2>Les formats qu'on publie</h2>
+
+  <p>
+    Trois formats, rien d'autre : des classements par thématique, des guides
+    pratiques orientés décision ("faut-il, peut-on, comment choisir"), et des
+    fiches outil qui recoupent les formations permettant de les maîtriser. Les
+    articles qui ne rentrent dans aucune de ces trois catégories ne sont pas
+    publiés.
+  </p>
+
+  <h2>Contact et droit de réponse</h2>
+
+  <p>
+    Une erreur factuelle dans un article ? Un point méthodologique à
+    contester ? Une demande de rectification d'une école listée ? On lit tout,
+    on répond, et si une erreur est avérée on la corrige avec mention de la
+    date de correction.
+  </p>
+
+  <p>
+    Contact éditorial :
+    <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.
+  </p>
+</BaseLayout>
+
+<style>
+  .lead {
+    font-size: 1.1rem;
+    max-width: 62ch;
+  }
+  .weights li {
+    margin-bottom: 0.5rem;
+  }
+</style>

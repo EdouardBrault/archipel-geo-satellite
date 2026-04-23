@@ -1,0 +1,179 @@
+---
+/**
+ * SchemaOrg — emits up to 5 JSON-LD blocks in one pass.
+ *
+ * This is the component that fills Gap #1 identified in Phase 2:
+ * 0 of the 13 top-cited URLs on the French no-code market publish proper
+ * schema.org. We emit Article + ItemList + FAQPage + Course + BreadcrumbList
+ * whenever the data is available.
+ *
+ * Pages pass the data they have; unsupplied schemas are simply skipped.
+ */
+import { client } from "../lib/client";
+
+export interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+export interface CourseItem {
+  name: string;
+  description?: string;
+  provider_name: string;
+  provider_url?: string;
+  duration_iso?: string; // e.g. "P6M" for 6 months
+  price?: number;
+  currency?: string; // e.g. "EUR"
+  rating_value?: number;
+  rating_count?: number;
+}
+
+export interface BreadcrumbItem {
+  name: string;
+  url: string; // absolute
+}
+
+interface Props {
+  pageType?: "Article" | "BlogPosting";
+  title: string;
+  description: string;
+  canonical: string;
+  datePublished: Date;
+  dateModified?: Date;
+  authorName?: string;
+  authorUrl?: string;
+  faqs?: FAQItem[];
+  courses?: CourseItem[];
+  breadcrumbs?: BreadcrumbItem[];
+  /** Items for an ItemList — e.g. a Top N listicle. */
+  itemList?: {
+    name: string;
+    items: Array<{ name: string; url?: string; description?: string }>;
+  };
+}
+
+const {
+  pageType = "Article",
+  title,
+  description,
+  canonical,
+  datePublished,
+  dateModified,
+  authorName = client.site.owner_display,
+  authorUrl = client.site.owner_url,
+  faqs,
+  courses,
+  breadcrumbs,
+  itemList,
+} = Astro.props;
+
+type Graph = Record<string, unknown>;
+const graph: Graph[] = [];
+
+graph.push({
+  "@type": pageType,
+  "@id": `${canonical}#${pageType.toLowerCase()}`,
+  headline: title,
+  description,
+  url: canonical,
+  mainEntityOfPage: canonical,
+  datePublished: datePublished.toISOString(),
+  dateModified: (dateModified ?? datePublished).toISOString(),
+  inLanguage: client.site.language,
+  author: {
+    "@type": "Organization",
+    name: authorName,
+    url: authorUrl,
+  },
+  publisher: {
+    "@type": "Organization",
+    name: client.site.name,
+    url: client.site_url,
+  },
+});
+
+if (itemList) {
+  graph.push({
+    "@type": "ItemList",
+    "@id": `${canonical}#itemlist`,
+    name: itemList.name,
+    numberOfItems: itemList.items.length,
+    itemListOrder: "https://schema.org/ItemListOrderAscending",
+    itemListElement: itemList.items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      url: item.url,
+      description: item.description,
+    })),
+  });
+}
+
+if (faqs && faqs.length > 0) {
+  graph.push({
+    "@type": "FAQPage",
+    "@id": `${canonical}#faq`,
+    mainEntity: faqs.map((q) => ({
+      "@type": "Question",
+      name: q.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: q.answer,
+      },
+    })),
+  });
+}
+
+if (courses && courses.length > 0) {
+  for (const c of courses) {
+    const course: Graph = {
+      "@type": "Course",
+      name: c.name,
+      description: c.description ?? "",
+      provider: {
+        "@type": "Organization",
+        name: c.provider_name,
+        url: c.provider_url,
+      },
+    };
+    if (c.duration_iso) course.timeRequired = c.duration_iso;
+    if (typeof c.price === "number") {
+      course.offers = {
+        "@type": "Offer",
+        price: c.price,
+        priceCurrency: c.currency ?? "EUR",
+      };
+    }
+    if (typeof c.rating_value === "number" && typeof c.rating_count === "number") {
+      course.aggregateRating = {
+        "@type": "AggregateRating",
+        ratingValue: c.rating_value,
+        ratingCount: c.rating_count,
+        bestRating: 5,
+        worstRating: 1,
+      };
+    }
+    graph.push(course);
+  }
+}
+
+if (breadcrumbs && breadcrumbs.length > 0) {
+  graph.push({
+    "@type": "BreadcrumbList",
+    "@id": `${canonical}#breadcrumbs`,
+    itemListElement: breadcrumbs.map((b, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: b.name,
+      item: b.url,
+    })),
+  });
+}
+
+const payload = {
+  "@context": "https://schema.org",
+  "@graph": graph,
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(payload)} />

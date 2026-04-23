@@ -1,0 +1,42 @@
+Archipel Marketing Proprietary License
+Copyright (c) 2026 Archipel Marketing, SAS.
+
+All rights reserved.
+
+This software and its associated documentation (the "Software"), including
+but not limited to the contents of the archipel-geo-satellite repository
+(scripts, templates, prompts, documentation, configuration examples and
+assembled methodology), are the proprietary and confidential property of
+Archipel Marketing. The Software is published in a public repository for
+transparency and auditability only. Its public visibility does NOT grant
+any license to use, copy, modify, distribute, sublicense or create
+derivative works.
+
+Permissions granted:
+  - Archipel Marketing employees and contractors, acting in the course of
+    their engagement by Archipel Marketing, may use, modify and deploy
+    the Software to onboard Archipel clients.
+  - Archipel clients, while under active contract with Archipel Marketing,
+    may inspect, audit and host copies of the Software-generated projects
+    that apply specifically to their engagement.
+
+Explicitly prohibited:
+  - Use of the Software by any third party, commercial or non-commercial,
+    including but not limited to: other marketing or SEO agencies,
+    consultants, competitors of Archipel Marketing, AI-driven automation
+    services, or any tool that redistributes or repackages the Software
+    or its outputs.
+  - Redistribution of the Software, whether modified or verbatim, in
+    whole or in part.
+  - Use of the Software as training data for machine learning models.
+  - Reverse engineering the Software for competitive intelligence.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+For licensing enquiries: contact@archipelmarketing.com
