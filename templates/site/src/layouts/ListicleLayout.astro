@@ -29,6 +29,7 @@ interface ListicleItem {
 interface Props {
   title: string;
   description: string;
+  slug: string;
   datePublished: Date;
   dateModified?: Date;
   /** Short teaser shown under H1. */
@@ -49,6 +50,7 @@ interface Props {
 const {
   title,
   description,
+  slug,
   datePublished,
   dateModified,
   lead,
@@ -59,6 +61,8 @@ const {
   courses,
   faqs,
 } = Astro.props;
+
+const utmContext = { slug, kind: "listicle" };
 
 const effectiveDateModified = dateModified ?? datePublished;
 const siteUrl = client.site_url.replace(/\/$/, "");
@@ -147,6 +151,7 @@ const weightEntries = Object.entries(weights).map(([k, v]) => {
           headers={comparisonHeaders}
           rows={comparisonRows}
           note={`Dernière vérification : ${effectiveDateModified.toLocaleDateString("fr-FR")}. Sources : ${client.ranking_methodology.sources.join(", ")}.`}
+          utmContext={utmContext}
         />
       )
     }

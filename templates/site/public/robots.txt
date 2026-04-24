@@ -83,4 +83,5 @@ Allow: /
 
 # --- Sitemap ------------------------------------------------------------
 
+Sitemap: https://{{FQDN}}/sitemap.xml
 Sitemap: https://{{FQDN}}/sitemap-index.xml

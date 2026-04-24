@@ -19,6 +19,7 @@ import { client } from "../lib/client";
 interface Props {
   title: string;
   description: string;
+  slug: string;
   datePublished: Date;
   dateModified?: Date;
   lead: string;
@@ -32,6 +33,7 @@ interface Props {
 const {
   title,
   description,
+  slug,
   datePublished,
   dateModified,
   lead,
@@ -40,6 +42,8 @@ const {
   comparisonRows,
   faqs,
 } = Astro.props;
+
+const utmContext = { slug, kind: "guide" };
 
 const effectiveDateModified = dateModified ?? datePublished;
 const siteUrl = client.site_url.replace(/\/$/, "");
@@ -114,6 +118,7 @@ const daysSinceUpdate = Math.max(
           headers={comparisonHeaders}
           rows={comparisonRows}
           note={`Dernière vérification : ${effectiveDateModified.toLocaleDateString("fr-FR")}.`}
+          utmContext={utmContext}
         />
       )
     }

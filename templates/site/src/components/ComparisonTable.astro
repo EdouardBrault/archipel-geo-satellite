@@ -9,6 +9,8 @@
  * Mobile: the same <table> is styled responsively (horizontal scroll if
  * needed). We don't switch to a <div> grid — that would lose the semantics.
  */
+import { withUtm } from "../lib/utm";
+
 export interface ComparisonRow {
   rank: number;
   name: string;
@@ -24,9 +26,11 @@ interface Props {
   headers: string[];
   rows: ComparisonRow[];
   note?: string; // e.g. "Dernière vérification : 22 avril 2026"
+  /** UTM context: slug + kind of the parent article. */
+  utmContext?: { slug?: string; kind?: string };
 }
 
-const { caption, headers, rows, note } = Astro.props;
+const { caption, headers, rows, note, utmContext } = Astro.props;
 ---
 
 <figure class="comparison-table-wrap">
@@ -46,7 +50,7 @@ const { caption, headers, rows, note } = Astro.props;
             <th scope="row">{row.rank}</th>
             <td>
               {row.url ? (
-                <a href={row.url} rel="noopener">
+                <a href={withUtm(row.url, utmContext)} rel="noopener">
                   {row.name}
                 </a>
               ) : (

@@ -15,10 +15,12 @@ import BaseLayout from "./BaseLayout.astro";
 import SchemaOrg from "../components/SchemaOrg.astro";
 import type { FAQItem, BreadcrumbItem } from "../components/SchemaOrg.astro";
 import { client } from "../lib/client";
+import { withUtm } from "../lib/utm";
 
 interface Props {
   title: string;
   description: string;
+  slug: string;
   datePublished: Date;
   dateModified?: Date;
   lead: string;
@@ -34,6 +36,7 @@ interface Props {
 const {
   title,
   description,
+  slug,
   datePublished,
   dateModified,
   lead,
@@ -44,6 +47,8 @@ const {
   items,
   faqs,
 } = Astro.props;
+
+const utmContext = { slug, kind: "profile" };
 
 const effectiveDateModified = dateModified ?? datePublished;
 const siteUrl = client.site_url.replace(/\/$/, "");
@@ -114,7 +119,7 @@ const daysSinceUpdate = Math.max(
                 {providerUrl && (
                   <>
                     {" "}
-                    · <a href={providerUrl} rel="noopener">site officiel</a>
+                    · <a href={withUtm(providerUrl, utmContext)} rel="noopener">site officiel</a>
                   </>
                 )}
               </dd>
@@ -146,7 +151,7 @@ const daysSinceUpdate = Math.max(
           <ul>
             {items.map((it) => (
               <li>
-                {it.url ? <a href={it.url} rel="noopener"><strong>{it.name}</strong></a> : <strong>{it.name}</strong>}
+                {it.url ? <a href={withUtm(it.url, utmContext)} rel="noopener"><strong>{it.name}</strong></a> : <strong>{it.name}</strong>}
                 {it.description && <> : {it.description}</>}
               </li>
             ))}

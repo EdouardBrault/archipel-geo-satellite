@@ -13,10 +13,12 @@ import type { FAQItem, BreadcrumbItem } from "../components/SchemaOrg.astro";
 import ComparisonTable from "../components/ComparisonTable.astro";
 import type { ComparisonRow } from "../components/ComparisonTable.astro";
 import { client } from "../lib/client";
+import { withUtm } from "../lib/utm";
 
 interface Props {
   title: string;
   description: string;
+  slug: string;
   datePublished: Date;
   dateModified?: Date;
   lead: string;
@@ -32,6 +34,7 @@ interface Props {
 const {
   title,
   description,
+  slug,
   datePublished,
   dateModified,
   lead,
@@ -43,6 +46,8 @@ const {
   comparisonRows,
   faqs,
 } = Astro.props;
+
+const utmContext = { slug, kind: "tool" };
 
 const effectiveDateModified = dateModified ?? datePublished;
 const siteUrl = client.site_url.replace(/\/$/, "");
@@ -92,7 +97,7 @@ const daysSinceUpdate = Math.max(
             {toolUrl && (
               <>
                 {" "}
-                · <a href={toolUrl} rel="noopener">site officiel</a>
+                · <a href={withUtm(toolUrl, utmContext)} rel="noopener">site officiel</a>
               </>
             )}
           </span>
@@ -130,6 +135,7 @@ const daysSinceUpdate = Math.max(
           headers={comparisonHeaders}
           rows={comparisonRows}
           note={`Dernière vérification : ${effectiveDateModified.toLocaleDateString("fr-FR")}.`}
+          utmContext={utmContext}
         />
       )
     }

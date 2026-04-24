@@ -1,0 +1,4 @@
+# Cloudflare Pages redirects
+# Canonical sitemap alias — bots and humans expect /sitemap.xml.
+# Astro @astrojs/sitemap emits /sitemap-index.xml + /sitemap-0.xml.
+/sitemap.xml /sitemap-index.xml 301
